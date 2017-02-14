@@ -33,6 +33,8 @@ public class SimpleTcpServerReadWriteTest {
 
         clientSocket = new Socket("0.0.0.0", tcpServer.getPort());
 
+        Thread.sleep(100);
+
         log.info("clientSocket - connected to {} - {}", clientSocket.getLocalSocketAddress().toString(), clientSocket.getRemoteSocketAddress().toString());
     }
 
@@ -103,6 +105,8 @@ public class SimpleTcpServerReadWriteTest {
         expected.write(" AND ".getBytes());
         expected.write(payload);
 
+        Thread.sleep(100);
+        
         byte[] buffer = new byte[expected.size() * 2];
         InputStream socketInputStream = clientSocket.getInputStream();
 
