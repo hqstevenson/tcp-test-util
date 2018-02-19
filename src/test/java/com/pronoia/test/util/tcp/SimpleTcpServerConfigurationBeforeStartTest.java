@@ -1,10 +1,26 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.pronoia.test.util.tcp;
+
+import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -39,10 +55,10 @@ public class SimpleTcpServerConfigurationBeforeStartTest {
 
     @Test
     public void testGetHost() throws Exception {
-        final String TEST_HOST = "A Very Bad Hostname for testing";
-        tcpServer.host = TEST_HOST;
+        final String testHost = "A Very Bad Hostname for testing";
+        tcpServer.host = testHost;
 
-        assertEquals(TEST_HOST, tcpServer.getHost());
+        assertEquals(testHost, tcpServer.getHost());
     }
 
     @Test
@@ -99,18 +115,18 @@ public class SimpleTcpServerConfigurationBeforeStartTest {
 
     @Test
     public void testSetHost() throws Exception {
-        final String TEST_HOST_NAME = "A_BAD_HOSTNAME_FOR_TESTING.apache.org";
-        tcpServer.setHost(TEST_HOST_NAME);
+        final String testHostName = "A_BAD_HOSTNAME_FOR_TESTING.apache.org";
+        tcpServer.setHost(testHostName);
 
-        assertEquals(TEST_HOST_NAME, tcpServer.host);
+        assertEquals(testHostName, tcpServer.host);
     }
 
     @Test
     public void testSetPort() throws Exception {
-        final int TEST_PORT_VALUE = 54321;
-            tcpServer.setPort(TEST_PORT_VALUE);
+        final int testPortValue = 54321;
+        tcpServer.setPort(testPortValue);
 
-        assertEquals(TEST_PORT_VALUE, tcpServer.port);
+        assertEquals(testPortValue, tcpServer.port);
     }
 
     @Test(expected = IllegalArgumentException.class)

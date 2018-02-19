@@ -1,32 +1,54 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.pronoia.test.util.tcp;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.*;
-import java.util.LinkedList;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimpleTcpServer {
     Logger log = LoggerFactory.getLogger(this.getClass());
 
     String name = this.getClass().getSimpleName();
 
-    String host = null;
-    int port = 0;
+    String host;
+    int port;
     int backlog = 1;
     int bindTimeout = 60000;
     int acceptTimeout = 60000;
     int receiveTimeout = 15000;
     int readTimeout = 1000;
 
-    private ServerSocket serverSocket = null;
+    private ServerSocket serverSocket;
 
     private List<Socket> connections = new CopyOnWriteArrayList<>();
 
@@ -48,9 +70,9 @@ public class SimpleTcpServer {
     }
 
     /**
-     * Start the TCP Server
+     * Start the TCP Server.
      *
-     * @return
+     * @return the current SimpleTcpServer
      */
     public SimpleTcpServer start() {
         if (serverSocket == null) {
@@ -69,7 +91,7 @@ public class SimpleTcpServer {
 
             try {
                 InetSocketAddress address;
-                if (host == null ) {
+                if (host == null) {
                     address = new InetSocketAddress(port);
                 } else {
                     address = new InetSocketAddress(host, port);
@@ -114,10 +136,11 @@ public class SimpleTcpServer {
     }
 
     /**
-     * Accept a TCP Connection from a client
+     * Accept a TCP Connection from a client.
+     *
+     * @param waitForConnection if true, the call will block until a connection is established
      */
     public void acceptConnection(boolean waitForConnection) {
-        String serverSocketAddress = serverSocket.getLocalSocketAddress().toString();
         Thread bindThread = new ConnectionAcceptorThread();
 
         if (waitForConnection) {
@@ -162,20 +185,23 @@ public class SimpleTcpServer {
         for (Socket clientSocket : connections) {
             String clientSocketAddress = clientSocket.getRemoteSocketAddress().toString();
 
-            log.trace("{} [{}] resetting client connection {}", this.name, serverSocketAddress, clientSocketAddress);
+            log.trace("{} [{}] resetting client connection {}",
+                name, serverSocketAddress, clientSocketAddress);
             if (clientSocket.isConnected() && !clientSocket.isClosed()) {
-                final int SO_LINGER_RESET = 0;
+                final int soLingerReset = 0;
                 try {
-                    clientSocket.setSoLinger(true, SO_LINGER_RESET);
+                    clientSocket.setSoLinger(true, soLingerReset);
                 } catch (SocketException socketEx) {
-                    log.warn(String.format("%s [%s] ignoring exception encountered setting SO_LINGER to %d on the socket %s to force a reset", name, serverSocketAddress, SO_LINGER_RESET, clientSocketAddress), socketEx);
+                    log.warn(String.format("%s [%s] ignoring exception encountered setting SO_LINGER to %d on the socket %s to force a reset",
+                        name, serverSocketAddress, soLingerReset, clientSocketAddress), socketEx);
                 }
 
                 try {
                     clientSocket.close();
                     log.info("{} [{}] client connection {} reset", this.name, serverSocketAddress, clientSocketAddress);
                 } catch (IOException ex) {
-                    log.warn(String.format("{} [{}] ignoring exception encountered resetting the client connection", this.name, serverSocketAddress, clientSocketAddress), ex);
+                    log.warn(String.format("{} [{}] ignoring exception encountered resetting the client connection",
+                        name, serverSocketAddress, clientSocketAddress), ex);
                 }
             }
         }
@@ -184,7 +210,7 @@ public class SimpleTcpServer {
     }
 
     public boolean isStarted() {
-        return (serverSocket != null);
+        return serverSocket != null;
     }
 
     public boolean isClientConnected() {
@@ -219,10 +245,12 @@ public class SimpleTcpServer {
             try {
                 return clientSocket.getInputStream();
             } catch (IOException ioEx) {
-                throw new RuntimeException(String.format("%s [%s] failed to get InputStream from client socket %s", name, serverSocket.getLocalSocketAddress().toString(), clientSocket.getRemoteSocketAddress().toString()), ioEx);
+                throw new RuntimeException(String.format("%s [%s] failed to get InputStream from client socket %s",
+                    name, serverSocket.getLocalSocketAddress().toString(), clientSocket.getRemoteSocketAddress().toString()), ioEx);
             }
         } else {
-            throw new IllegalStateException(String.format("%s [%s] cannot get input stream before client connection is established", name, serverSocket.getLocalSocketAddress().toString()));
+            throw new IllegalStateException(String.format("%s [%s] cannot get input stream before client connection is established",
+                name, serverSocket.getLocalSocketAddress().toString()));
         }
     }
 
@@ -233,10 +261,12 @@ public class SimpleTcpServer {
             try {
                 return clientSocket.getOutputStream();
             } catch (IOException ioEx) {
-                throw new RuntimeException(String.format("%s [%s] failed to get OutputStream from client socket %s", name, serverSocket.getLocalSocketAddress().toString(), clientSocket.getRemoteSocketAddress().toString()), ioEx);
+                throw new RuntimeException(String.format("%s [%s] failed to get OutputStream from client socket %s",
+                    name, serverSocket.getLocalSocketAddress().toString(), clientSocket.getRemoteSocketAddress().toString()), ioEx);
             }
         } else {
-            throw new IllegalStateException(String.format("%s [%s] cannot get output stream before client connection is established", name, serverSocket.getLocalSocketAddress().toString()));
+            throw new IllegalStateException(String.format("%s [%s] cannot get output stream before client connection is established",
+                name, serverSocket.getLocalSocketAddress().toString()));
         }
     }
 
@@ -249,13 +279,13 @@ public class SimpleTcpServer {
             try {
                 inputStream = connection.getInputStream();
             } catch (IOException getStreamEx) {
-                log.warn("{} ignoring exception encountered when retrieving the input stream to determine data availability", getStreamEx);
+                log.warn("Ignoring exception encountered when retrieving the input stream to determine data availability", getStreamEx);
             }
             if (inputStream != null) {
                 try {
                     answer = inputStream.available();
                 } catch (IOException availableEx) {
-                    log.warn("{} ignoring exception encountered when determining if data is available from the input stream", availableEx);
+                    log.warn("Ignoring exception encountered when determining if data is available from the input stream", availableEx);
                 }
             }
         }
@@ -352,14 +382,15 @@ public class SimpleTcpServer {
     }
 
     public void setPort(int port) {
-        final int MAX_PORT_VALUE = 65535;
+        final int maxPortValue = 65535;
 
         if (serverSocket != null) {
-            throw new IllegalAccessError(String.format("%s [%s] cannot set port after server has been started", name, serverSocket.getLocalSocketAddress().toString()));
+            throw new IllegalAccessError(String.format("%s [%s] cannot set port after server has been started",
+                name, serverSocket.getLocalSocketAddress().toString()));
         }
 
-        if (port > MAX_PORT_VALUE) {
-            throw new IllegalArgumentException("Port value must be less than or equal to " + MAX_PORT_VALUE);
+        if (port > maxPortValue) {
+            throw new IllegalArgumentException("Port value must be less than or equal to " + maxPortValue);
         }
 
         this.port = port;
