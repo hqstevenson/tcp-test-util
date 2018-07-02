@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pronoia.test.util.tcp;
+package com.pronoia.util.tcp;
 
 import java.util.concurrent.TimeUnit;
 
@@ -23,11 +23,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
-public class SimpleTcpServerConfigurationAfterStartTest {
+public class SimpleTcpServerConfigurationBeforeStartTest {
     static final int TEST_TIMEOUT_MINUTES = 5;
     static final int TEST_TIMEOUT_MILLIS = (int) TimeUnit.MILLISECONDS.convert(TEST_TIMEOUT_MINUTES, TimeUnit.MINUTES);
 
@@ -35,20 +33,22 @@ public class SimpleTcpServerConfigurationAfterStartTest {
 
     @Before
     public void setUp() throws Exception {
-        tcpServer = new SimpleTcpServer("test-server").start();
+        tcpServer = new SimpleTcpServer("test-server");
     }
 
     @After
     public void tearDown() throws Exception {
-        tcpServer.stop();
+        if (tcpServer.isStarted()) {
+            tcpServer.stop();
+        }
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    @Test(expected = IllegalStateException.class)
     public void testGetInputStream() throws Exception {
         tcpServer.getInputStream();
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    @Test(expected = IllegalStateException.class)
     public void testGetOutputStream() throws Exception {
         tcpServer.getOutputStream();
     }
@@ -65,20 +65,17 @@ public class SimpleTcpServerConfigurationAfterStartTest {
     public void testGetPort() throws Exception {
         tcpServer.port = Integer.MAX_VALUE;
 
-        /* The server will dynamically pick a port, and it should be valid.  Since it is running, it will get the port
-           value from the ServerSocket, so it will be different than the value in the object
-           */
-        assertNotEquals(Integer.MAX_VALUE, tcpServer.getPort());
+        assertEquals(Integer.MAX_VALUE, tcpServer.getPort());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void testGetInetAddress() throws Exception {
-        assertNotNull(tcpServer.getInetAddress());
+        tcpServer.getInetAddress();
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void testGetSocketAddress() throws Exception {
-        assertNotNull(tcpServer.getSocketAddress());
+        tcpServer.getSocketAddress();
     }
 
     @Test
@@ -116,14 +113,25 @@ public class SimpleTcpServerConfigurationAfterStartTest {
         assertEquals(Integer.MAX_VALUE, tcpServer.getReadTimeout());
     }
 
-    @Test(expected = IllegalAccessError.class)
+    @Test
     public void testSetHost() throws Exception {
-        tcpServer.setHost("BLAH");
+        final String testHostName = "A_BAD_HOSTNAME_FOR_TESTING.apache.org";
+        tcpServer.setHost(testHostName);
+
+        assertEquals(testHostName, tcpServer.host);
     }
 
-    @Test(expected = IllegalAccessError.class)
+    @Test
     public void testSetPort() throws Exception {
-        tcpServer.setPort(54321);
+        final int testPortValue = 54321;
+        tcpServer.setPort(testPortValue);
+
+        assertEquals(testPortValue, tcpServer.port);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetPortWithTooLargeOfAPortNumber() throws Exception {
+        tcpServer.setPort(Integer.MAX_VALUE);
     }
 
     @Test

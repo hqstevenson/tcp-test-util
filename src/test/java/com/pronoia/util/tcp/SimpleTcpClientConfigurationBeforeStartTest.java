@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pronoia.test.util.tcp;
+package com.pronoia.util.tcp;
 
 import java.util.concurrent.TimeUnit;
 

@@ -14,65 +14,67 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.pronoia.test.util.tcp;
+package com.pronoia.util.tcp;
 
-import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class SimpleTcpClientConnectionTest {
+public class SimpleTcpServerConnectionTest {
     Logger log = LoggerFactory.getLogger(this.getClass());
 
-    ServerSocket serverSocket;
-    Socket connection;
-    SimpleTcpClient tcpClient;
+    SimpleTcpServer tcpServer;
 
     @Before
     public void setUp() throws Exception {
-        serverSocket = new ServerSocket(0);
-        tcpClient = new SimpleTcpClient("test-client").port(serverSocket.getLocalPort()).start();
-
-        connection = serverSocket.accept();
-
-        assertTrue("Client should be connected", tcpClient.isConnected());
-        assertTrue("ServerSocket should be connected", connection.isConnected());
+        tcpServer = new SimpleTcpServer("test-server").start();
+        tcpServer.acceptConnection();
     }
 
     @After
     public void tearDown() throws Exception {
-        if (tcpClient.isStarted()) {
-            tcpClient.stop();
-        }
+        tcpServer.stop();
     }
 
     @Test(timeout = 10000)
-    public void testIsConnected() throws Exception {
-        assertTrue("isConnected should return true before socket is closed", tcpClient.isConnected());
+    public void testAcceptConnectionByHostName() throws Exception {
+        Socket client = new Socket(tcpServer.getInetAddress().getHostName(), tcpServer.getPort());
 
-        tcpClient.socket.close();
+        Thread.sleep(100);
 
-        assertFalse("isConnected should return false after socket is closed", tcpClient.isConnected());
+        assertTrue("Socket should be connected", client.isConnected());
+        assertTrue("Client should be connected", tcpServer.isClientConnected());
     }
 
     @Test(timeout = 10000)
-    public void testIsClosed() throws Exception {
-        assertFalse("isClosed should return false before socket is closed", tcpClient.isClosed());
+    public void testAcceptConnectionByCanonicalHostName() throws Exception {
+        Socket client = new Socket(tcpServer.getInetAddress().getCanonicalHostName(), tcpServer.getPort());
 
-        tcpClient.socket.close();
+        Thread.sleep(100);
 
-        assertTrue("isClosed should return true after socket is closed", tcpClient.isClosed());
+        assertTrue("Socket should be connected", client.isConnected());
+        assertTrue("Client should be connected", tcpServer.isClientConnected());
     }
 
-    /*
+
+    @Test(timeout = 10000)
+    public void testAcceptConnectionByHostAddress() throws Exception {
+        Socket client = new Socket(tcpServer.getInetAddress().getHostAddress(), tcpServer.getPort());
+
+        Thread.sleep(100);
+
+        assertTrue("Socket should be connected", client.isConnected());
+        assertTrue("Client should be connected", tcpServer.isClientConnected());
+    }
+
     @Test(timeout = 10000)
     public void testCloseConnectionsFollowedByClientAvailable() throws Exception {
         Socket client = new Socket(tcpServer.getInetAddress().getHostAddress(), tcpServer.getPort());
@@ -86,7 +88,7 @@ public class SimpleTcpClientConnectionTest {
 
         Thread.sleep(100);
 
-        assertEquals( 0, client.getInputStream().available());
+        assertEquals(0, client.getInputStream().available());
     }
 
     @Test(timeout = 10000)
@@ -105,7 +107,8 @@ public class SimpleTcpClientConnectionTest {
         assertEquals(-1, client.getInputStream().read());
     }
 
-    @Test(timeout = 10000)
+    @Test()
+    // @Test(timeout = 10000)
     public void testCloseConnectionsFollowedByClientWrite() throws Exception {
         Socket client = new Socket(tcpServer.getInetAddress().getHostAddress(), tcpServer.getPort());
 
@@ -134,7 +137,7 @@ public class SimpleTcpClientConnectionTest {
 
         Thread.sleep(100);
 
-        assertEquals( 0, client.getInputStream().available());
+        assertEquals(0, client.getInputStream().available());
     }
 
     @Test(timeout = 10000, expected = SocketException.class)
@@ -168,5 +171,5 @@ public class SimpleTcpClientConnectionTest {
 
         client.getOutputStream().write(1);
     }
-    */
+
 }
